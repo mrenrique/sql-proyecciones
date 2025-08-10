@@ -1,22 +1,33 @@
 /*
 Propósito:
-  Validar si algún cultivo tiene lotes con Estado = 0 en BD_Local
-  y replicar validación en 3 instancias Azure (principalmente Azure Piura por conexión a Geotest).
+  Validar si hay lotes con Estado=0 por cultivo en la campaña actual y, tras validar, actualizarlos a Estado=1.
+  en BD_Local y en 3 instancias Azure (principalmente Azure Piura por conexión a Geotest).
 
 Alcance:
   Tablas: Lote, AreaCultivable, Variedad, Cultivo
-  Campaña: Campaña actual
+  Campaña: Actual (YEAR(GETDATE()))
   Instancias: BD_Local, Azure Piura, Azure Arandano, Azure Palta (Total 4)
-  
+
+Salida esperada:
+  - Resumen de conteos por (Cultivo, Estado).
+  - Detalle TOP N de candidatos.
+
+Riesgos y performance:
+  - Ejecutar primero en entorno de prueba.
+
+Procedimiento:
+  1) Ejecutar SELECT de resumen.
+  2) Revisar detalle de candidatos.
+  3) Si todo ok: ejecutar UPDATE seguro (plantilla abajo).
+
 Acción posterior:
   Actualizar Estado a 1 según resultado de validación para cada cultivo.
 
 Autor: enrique_mosqueira
 Fecha: 2025-08-10
 Notas:
-  - Revisión previa con SELECT. Si todo ok, ejecutar UPDATE.
-  - UPDATE sólo después de validar manualmente conteos y casos.
-  - Replicar en instancias de Azure
+  - Revisión previa con SELECT conteos y casos. Si todo ok, ejecutar UPDATE.
+  - Replicar en instancias Azure de forma coordinada.
 */
 
 -- Paso 1: Validación
