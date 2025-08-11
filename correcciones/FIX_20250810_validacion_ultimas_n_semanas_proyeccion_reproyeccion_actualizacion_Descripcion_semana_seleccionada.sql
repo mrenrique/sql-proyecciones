@@ -13,7 +13,7 @@ Propósito:
     - @DescripcionPrefijo (NVARCHAR) -> N'Proyeccion%' o N'Re-Proyeccion%'
     - @SemanaObjetivo (INT)          -> semana puntual para validar/actualizar
     - @DescripcionActual (NVARCHAR) / @DescripcionNueva (NVARCHAR) -> para UPDATE opcional
-  Entornos: BD_Local / Azure
+  Entornos: BD_Local
 
 Salida esperada:
   - Listado agregado por semana de las últimas N semanas según filtros.
@@ -41,17 +41,15 @@ Notas:
 -- =========================
 -- Parámetros
 -- =========================
-DECLARE @IdCultivo          INT          = 5;                   -- cultivo objetivo
+DECLARE @IdCultivo          INT          = 6;                   -- cultivo objetivo
 DECLARE @AnioProyeccion     INT          = 2025;                -- año de proyección
 DECLARE @NumSemanas         INT          = 5;                   -- últimas N semanas
-DECLARE @DescripcionPrefijo NVARCHAR(50) = N'Proyeccion%';      -- o N'Re-Proyeccion%'
+DECLARE @DescripcionPrefijo NVARCHAR(50) = N'%Proyeccion%';      -- o N'Re-Proyeccion%'
 
 -- Validación puntual y posible UPDATE
 DECLARE @SemanaObjetivo     INT          = 33;                  -- semana puntual
-DECLARE @DescripcionActual  NVARCHAR(50) = N'Proyeccion';       -- etiqueta exacta actual
-DECLARE @DescripcionNueva   NVARCHAR(50) = N'Proyeccion-V1';    -- nueva etiqueta
-
-SET NOCOUNT ON;
+DECLARE @DescripcionActual  NVARCHAR(50) = N'Proyeccion';       -- etiqueta exacta actual | Proyeccion-VF
+DECLARE @DescripcionNueva   NVARCHAR(50) = N'Proyeccion-V1';    -- nueva etiquetaET NOCOUNT ON;
 
 -- =========================
 -- 1) Últimas N semanas por número (MAX ... BETWEEN)
@@ -90,6 +88,9 @@ ORDER BY
 -- 2) Validación puntual de una semana (suma de toneladas)
 -- =========================
 SELECT
+    @SemanaObjetivo AS 'SemanaObjetivo',
+    @DescripcionActual AS 'DescripcionActual',
+    @DescripcionNueva AS 'DescripcionNueva',
     CAST(SUM(t.Toneladas) AS NUMERIC(16,2)) AS Toneladas
 FROM dbo.PBI_TablaMaestraProyeccion AS t
 INNER JOIN dbo.Variedad AS v ON v.idVariedad = t.idVariedad
@@ -101,24 +102,28 @@ WHERE v.idCultivo        = @IdCultivo
 -- =========================
 -- 3) UPDATE opcional: cambiar Descripción de la semana puntual (comentado)
 -- =========================
--- -- BEGIN TRAN;
---     -- Previsualización
---     -- SELECT t.*
---     -- FROM dbo.PBI_TablaMaestraProyeccion AS t
---     -- INNER JOIN dbo.Variedad AS v ON v.idVariedad = t.idVariedad
---     -- WHERE v.idCultivo        = @IdCultivo
---     --   AND t.AnioProyeccion   = @AnioProyeccion
---     --   AND t.SemanaProyeccion = @SemanaObjetivo
---     --   AND t.Descripcion      = @DescripcionActual;
---
---     -- Actualización
---     -- UPDATE t
---     -- SET t.Descripcion = @DescripcionNueva
---     -- FROM dbo.PBI_TablaMaestraProyeccion AS t
---     -- INNER JOIN dbo.Variedad AS v ON v.idVariedad = t.idVariedad
---     -- WHERE v.idCultivo        = @IdCultivo
---     --   AND t.AnioProyeccion   = @AnioProyeccion
---     --   AND t.SemanaProyeccion = @SemanaObjetivo
---     --   AND t.Descripcion      = @DescripcionActual;
---     -- SELECT @@ROWCOUNT AS FilasActualizadas;
--- -- COMMIT TRAN;
+-- BEGIN TRAN;
+--     -- 1) Previsualización: ¿qué filas serían afectadas?
+--     SELECT t.*
+--     FROM dbo.PBI_TablaMaestraProyeccion AS t
+--     INNER JOIN dbo.Variedad AS v ON v.idVariedad = t.idVariedad
+--     WHERE v.idCultivo        = @IdCultivo
+--       AND t.AnioProyeccion   = @AnioProyeccion
+--       AND t.SemanaProyeccion = @SemanaObjetivo
+--       AND t.Descripcion      = @DescripcionActual;
+
+--     -- 2) (Ensayo) Actualización: se ejecuta, pero la revertiremos
+--     UPDATE t
+--     SET t.Descripcion = @DescripcionNueva
+--     FROM dbo.PBI_TablaMaestraProyeccion AS t
+--     INNER JOIN dbo.Variedad AS v ON v.idVariedad = t.idVariedad
+--     WHERE v.idCultivo        = @IdCultivo
+--       AND t.AnioProyeccion   = @AnioProyeccion
+--       AND t.SemanaProyeccion = @SemanaObjetivo
+--       AND t.Descripcion      = @DescripcionActual;
+
+--     -- 3) ¿Cuántas filas tocaría?
+--     SELECT @@ROWCOUNT AS FilasActualizadas;
+-- -- Hasta que no se ejecute COMMIT TRAN;, los cambios no se confirman definitivamente en la base de datos.
+-- COMMIT TRAN;
+-- -- ROLLBACK TRAN;
