@@ -35,8 +35,8 @@ Notas:
 -- =========================
 -- Parámetros
 -- =========================
-DECLARE @idCultivo       INT  = 5;            -- Cultivo objetivo
-DECLARE @FechaOrigen     DATE = '2025-07-23'; -- Fecha base para calcular Año y semanas
+DECLARE @idCultivo       INT  = 6;            -- Cultivo objetivo
+DECLARE @FechaOrigen     DATE = '2025-08-08'; -- Fecha base para calcular Año y semanas
 
 SET NOCOUNT ON;
 
@@ -59,11 +59,11 @@ FROM dbo.PBI_TablaMaestraProyeccion AS t
 INNER JOIN dbo.Variedad AS v
         ON v.idVariedad = t.idVariedad
 WHERE v.idCultivo       = @idCultivo
-  AND t.AnioProyeccion  = @AnioProyeccion
-  AND (
+    AND t.AnioProyeccion  = @AnioProyeccion
+    AND (
         (t.Descripcion = N'Re-Proyeccion-VF' AND t.SemanaProyeccion = @SemanaReProyeccionVF) OR
         (t.Descripcion = N'Proyeccion'       AND t.SemanaProyeccion = @SemanaProyeccion)
-      )
+    )
 GROUP BY
     t.AnioProyeccion,
     t.Descripcion,
@@ -84,11 +84,11 @@ FROM dbo.PBI_TablaMaestraProyeccion AS t
 INNER JOIN dbo.Variedad AS v
         ON v.idVariedad = t.idVariedad
 WHERE v.idCultivo       = @idCultivo
-  AND t.AnioProyeccion  = @AnioProyeccion
-  AND (
+    AND t.AnioProyeccion  = @AnioProyeccion
+    AND (
         (t.Descripcion = N'Re-Proyeccion-VF' AND t.SemanaProyeccion = @SemanaReProyeccionVF) OR
         (t.Descripcion = N'Proyeccion'       AND t.SemanaProyeccion = @SemanaProyeccion)
-      )
+    )
 GROUP BY
     v.Variedad,
     t.Descripcion,
@@ -113,11 +113,11 @@ SELECT
         INNER JOIN dbo.Variedad AS v
                 ON v.idVariedad = t.idVariedad
         WHERE v.idCultivo      = @idCultivo
-          AND t.AnioProyeccion = @AnioProyeccion
-          AND (
+            AND t.AnioProyeccion = @AnioProyeccion
+            AND (
                 (t.Descripcion = N'Re-Proyeccion-VF' AND t.SemanaProyeccion = @SemanaReProyeccionVF) OR
                 (t.Descripcion = N'Proyeccion'       AND t.SemanaProyeccion = @SemanaProyeccion)
-              )
+            )
         FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)')
     , 1, 1, ''),
 
@@ -131,7 +131,7 @@ SELECT
           AND (
                 (t.Descripcion = N'Re-Proyeccion-VF' AND t.SemanaProyeccion = @SemanaReProyeccionVF) OR
                 (t.Descripcion = N'Proyeccion'       AND t.SemanaProyeccion = @SemanaProyeccion)
-              )
+            )
         FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)')
     , 1, 1, '');
 
