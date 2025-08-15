@@ -1,0 +1,74 @@
+/*
+Propósito:
+  Generar la fact table de bonos de evaluadores para la campaña objetivo,
+  parametrizando cultivo y año, con filtro por rango de fechas de campaña.
+
+Ámbito:
+  Tablas: TBL_M_BONOEVALUADORES (t), PBI_Calendario (f), Usuario (u), Cultivo (c)
+  Parámetros:
+    - @CultivoID (INT)
+    - @Anio      (INT) -> campaña objetivo
+  Entornos: BD_Local
+
+Salida esperada:
+  - Listado de bonos por evaluador, actividad y fecha dentro de la campaña.
+  - Columnas de ratios, errores y métricas de desempeño proyectado/ejecutado.
+
+Procedimiento:
+  1) Ajustar parámetros y rango de fechas de la campaña (inicio inclusive, fin exclusivo).
+  2) Consultar la fact table uniendo con calendario, usuario y cultivo.
+  3) Evitar funciones sobre la columna de fecha (uso de @FecIni/@FecFin).
+
+Autor: enrique_mosqueira
+Fecha: 2025-08-15
+Notas:
+  - Filtro por campaña usando BETWEEN semiclosed [@FecIni, @FecFin).
+  - SET XACT_ABORT ON para consistencia con el estándar del proyecto.
+*/
+
+-- =========================
+-- Parámetros
+-- =========================
+DECLARE @CultivoID  int = 9;
+DECLARE @Anio       int = 2025;
+
+DECLARE @FecIni date = DATEFROMPARTS(@Anio, 1, 1);
+DECLARE @FecFin date = DATEFROMPARTS(@Anio + 1, 1, 1); -- límite superior exclusivo
+
+SET XACT_ABORT ON;
+
+-- =========================
+-- Fact_Table_Bonos (Consulta principal)
+-- =========================
+SELECT
+    c.Nombre                 AS Cultivo,
+    t.Campana                AS [Campaña],
+    t.Tipo_Evaluador         AS Tipo,
+    t.Actividad,
+    u.UserName               AS Codigo,
+    u.Nombre                 AS Evaluador,
+    t.Fecha,
+    t.Condicion              AS Aplica,
+    t.Ratio_Proy,
+    t.Ratio_Ejec,
+    t.Error_Sistema_Proy,
+    t.Error_Sistema_Ejec,
+    t.Error_Campo_Proy,
+    t.Error_Campo_Ejec,
+    t.P_Desv,
+    t.P_Avance,
+    t.Bono
+FROM TBL_M_BONOEVALUADORES AS t
+JOIN PBI_Calendario        AS f ON f.Fecha     = t.Fecha
+JOIN Usuario               AS u ON u.idUsuario = t.idUsuario
+JOIN Cultivo               AS c ON c.idCultivo = t.idCultivo
+WHERE t.idCultivo = @CultivoID
+  AND t.Fecha >= @FecIni
+  AND t.Fecha <  @FecFin
+ORDER BY
+    c.Nombre,
+    t.Campana,
+    t.Tipo_Evaluador,
+    t.Actividad,
+    t.Fecha,
+    u.UserName;
